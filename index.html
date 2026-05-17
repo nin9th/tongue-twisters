@@ -545,6 +545,7 @@ buildList();
   let lastY = 0;
   let ticking = false;
   let chromeVisible = true;
+  const THRESHOLD = 6; // minimum px of intentional scroll
 
   // Measure header + nav heights and set CSS vars
   function measureAndSet() {
@@ -572,25 +573,35 @@ buildList();
     if (!ticking) {
       requestAnimationFrame(() => {
         const y = el.scrollTop;
-        const goingDown = y > lastY && y > 40;
-        const goingUp = y < lastY;
+        const maxY = el.scrollHeight - el.clientHeight;
+        const delta = y - lastY;
 
-        const header = document.getElementById("main-header");
-        const pracHeader = document.querySelector(".prac-header");
-        const nav = document.querySelector(".bottom-nav");
+        // Ignore tiny movements and anything near the scroll boundaries
+        const atTop = y <= 0;
+        const atBottom = y >= maxY - 2;
+        const intentional = Math.abs(delta) >= THRESHOLD;
 
-        if (goingDown && chromeVisible) {
-          chromeVisible = false;
-          if (header) header.classList.add("hidden");
-          if (pracHeader) pracHeader.classList.add("hidden");
-          nav.classList.add("hidden");
-          updatePadding(false);
-        } else if (goingUp && !chromeVisible) {
-          chromeVisible = true;
-          if (header) header.classList.remove("hidden");
-          if (pracHeader) pracHeader.classList.remove("hidden");
-          nav.classList.remove("hidden");
-          updatePadding(true);
+        if (!atTop && !atBottom && intentional) {
+          const goingDown = delta > 0;
+          if (goingDown && chromeVisible) {
+            chromeVisible = false;
+            const header = document.getElementById("main-header");
+            const pracHeader = document.querySelector(".prac-header");
+            const nav = document.querySelector(".bottom-nav");
+            if (header) header.classList.add("hidden");
+            if (pracHeader) pracHeader.classList.add("hidden");
+            if (nav) nav.classList.add("hidden");
+            updatePadding(false);
+          } else if (!goingDown && !chromeVisible) {
+            chromeVisible = true;
+            const header = document.getElementById("main-header");
+            const pracHeader = document.querySelector(".prac-header");
+            const nav = document.querySelector(".bottom-nav");
+            if (header) header.classList.remove("hidden");
+            if (pracHeader) pracHeader.classList.remove("hidden");
+            if (nav) nav.classList.remove("hidden");
+            updatePadding(true);
+          }
         }
 
         lastY = y;
